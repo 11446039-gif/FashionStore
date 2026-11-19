@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FashionStore 服飾購物管理系統</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+
+<style>
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: Arial, "Microsoft JhengHei", sans-serif;
+    background: #f5f3f0;
+    color: #333;
+}
+header {
+    background: #443c36;
+    color: white;
+    text-align: center;
+    padding: 30px;
+}
+nav {
+    background: #70645b;
+    padding: 15px;
+    text-align: center;
+}
+nav a {
+    color: white;
+    text-decoration: none;
+    margin: 12px;
+}
+main {
+    max-width: 1000px;
+    margin: 25px auto;
+    padding: 0 15px;
+}
+section {
+    background: white;
+    padding: 22px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px #ddd;
+}
+h2 { color: #705747; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+th { background: #eee7e1; }
+textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 14px;
+}
+button {
+    background: #705747;
+    color: white;
+    border: 0;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 8px 5px 8px 0;
+}
+button:hover { background: #4d3c30; }
+select {
+    padding: 9px;
+    margin: 8px 0;
+}
+.result { overflow-x: auto; }
+.message { color: green; font-weight: bold; }
+.error { color: red; font-weight: bold; }
+pre {
+    background: #f3f0ed;
+    padding: 12px;
+    white-space: pre-wrap;
+}
+footer {
+    text-align: center;
+    background: #443c36;
+    color: white;
+    padding: 18px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>FashionStore 服飾購物管理系統</h1>
+    <p>利用 SQL 管理商品、會員及訂單資料</p>
+</header>
+
+<nav>
+    <a href="#background">案例背景</a>
+    <a href="#design">資料庫設計</a>
+    <a href="#query">SQL 查詢</a>
+    <a href="#compare">結果比較</a>
+</nav>
+
+<main>
+
+<section id="background">
+    <h2>一、案例背景</h2>
+    <p>FashionStore 是一間服飾購物商店，主要販售上衣、褲子、外套及配件等商品。</p>
+    <p>店家需要管理會員資料、商品資訊及購物訂單。如果只用人工方式整理資料，容易發生資料遺漏、查詢速度慢及庫存管理不方便等問題。</p>
+    <p>因此，本系統使用資料庫儲存資料，並透過 SQL 查詢商品、會員、訂單及銷售資訊。</p>
+</section>
+
+<section id="design">
+    <h2>二、資料庫設計</h2>
+
+    <h3>1. ERD 資料表關係</h3>
+    <pre>
+Members（會員）
+    │ 1
+    │
+    │ 多
+Orders（訂單）
+    │ 1
+    │
+    │ 多
+OrderDetails（訂單明細）
+    │ 多
+    │
+    │ 1
+Products（商品）
+    </pre>
+
+    <p>一位會員可以有多筆訂單；一筆訂單可以有多筆訂單明細；一個商品也可以出現在不同訂單明細中。</p>
+
+    <h3>2. 資料表欄位說明</h3>
+
+    <h4>Members 會員資料表</h4>
+    <table>
+        <tr><th>欄位</th><th>型態</th><th>說明</th></tr>
+        <tr><td>MemberID</td><td>INTEGER</td><td>會員編號（主鍵）</td></tr>
+        <tr><td>Name</td><td>TEXT</td><td>會員姓名</td></tr>
+        <tr><td>Email</td><td>TEXT</td><td>電子郵件</td></tr>
+    </table>
+
+    <h4>Products 商品資料表</h4>
+    <table>
+        <tr><th>欄位</th><th>型態</th><th>說明</th></tr>
+        <tr><td>ProductID</td><td>INTEGER</td><td>商品編號（主鍵）</td></tr>
+        <tr><td>ProductName</td><td>TEXT</td><td>商品名稱</td></tr>
+        <tr><td>Category</td><td>TEXT</td><td>商品類別</td></tr>
+        <tr><td>Price</td><td>INTEGER</td><td>商品價格</td></tr>
+    </table>
+
+    <h4>Orders 訂單資料表</h4>
+    <table>
+        <tr><th>欄位</th><th>型態</th><th>說明</th></tr>
+        <tr><td>OrderID</td><td>INTEGER</td><td>訂單編號（主鍵）</td></tr>
+        <tr><td>MemberID</td><td>INTEGER</td><td>會員編號（外鍵）</td></tr>
+        <tr><td>OrderDate</td><td>TEXT</td><td>訂購日期</td></tr>
+    </table>
+
+    <h4>OrderDetails 訂單明細資料表</h4>
+    <table>
+        <tr><th>欄位</th><th>型態</th><th>說明</th></tr>
+        <tr><td>DetailID</td><td>INTEGER</td><td>明細編號（主鍵）</td></tr>
+        <tr><td>OrderID</td><td>INTEGER</td><td>訂單編號（外鍵）</td></tr>
+        <tr><td>ProductID</td><td>INTEGER</td><td>商品編號（外鍵）</td></tr>
+        <tr><td>Quantity</td><td>INTEGER</td><td>購買數量</td></tr>
+    </table>
+
+    <h3>3. 範例資料</h3>
+    <p>以下資料為系統建立的測試資料。</p>
+    <div id="sampleData">資料庫載入後會顯示範例資料。</div>
+</section>
+
+<section id="query">
+    <h2>三、SQL 查詢操作</h2>
+    <p>選擇查詢題目，系統會自動帶入 SQL 語法。</p>
+
+    <select id="question" onchange="changeQuery()">
+        <option value="0">題目一：查詢所有商品</option>
+        <option value="1">題目二：查詢價格超過 800 元的商品</option>
+        <option value="2">題目三：查詢有哪些商品類別</option>
+        <option value="3">題目四：計算每種商品的銷售數量</option>
+        <option value="4">題目五：查詢會員的訂單</option>
+        <option value="5">題目六：計算每種商品的銷售金額</option>
+    </select>
+
+    <p><strong>SQL 語法（可以自行修改）：</strong></p>
+    <textarea id="sqlInput"></textarea>
+    <button onclick="runQuery()">執行 SQL</button>
+
+    <p id="queryMessage"></p>
+    <div id="queryResult" class="result"></div>
+</section>
+
+<section id="compare">
+    <h2>四、查詢結果比較</h2>
+    <p>修改 SQL 條件，比較原本查詢與修改後的結果。</p>
+
+    <h3>原本的 SQL</h3>
+    <textarea id="beforeSQL" readonly></textarea>
+
+    <h3>修改後的 SQL</h3>
+    <textarea id="afterSQL">SELECT * FROM Products WHERE Price > 800;</textarea>
+
+    <button onclick="compareQuery()">比較查詢結果</button>
+
+    <h3>原本查詢結果</h3>
+    <div id="beforeResult" class="result"></div>
+
+    <h3>修改後查詢結果</h3>
+    <div id="afterResult" class="result"></div>
+
+    <h3>結果分析</h3>
+    <p id="explanation">按下比較查詢後，這裡會顯示結果差異。</p>
+</section>
+
+</main>
+
+<footer>
+    FashionStore 服飾購物管理系統｜SQL 查詢練習網站
+</footer>
+
+<script>
+let db;
+
+const queries = [
+    "SELECT * FROM Products;",
+    "SELECT * FROM Products WHERE Price > 800;",
+    "SELECT DISTINCT Category FROM Products;",
+    `SELECT Products.ProductName, SUM(OrderDetails.Quantity) AS TotalQuantity
+     FROM Products
+     JOIN OrderDetails ON Products.ProductID = OrderDetails.ProductID
+     GROUP BY Products.ProductID;`,
+    `SELECT Members.Name, Orders.OrderID, Orders.OrderDate
+     FROM Members
+     JOIN Orders ON Members.MemberID = Orders.MemberID;`,
+    `SELECT Products.ProductName,
+     SUM(Products.Price * OrderDetails.Quantity) AS TotalSales
+     FROM Products
+     JOIN OrderDetails ON Products.ProductID = OrderDetails.ProductID
+     GROUP BY Products.ProductID;`
+];
+
+const descriptions = [
+    "查詢所有商品，可以查看商品名稱、類別及價格。",
+    "使用 WHERE 篩選價格超過 800 元的商品。",
+    "使用 DISTINCT 去除重複的商品類別。",
+    "使用 SUM 和 GROUP BY 計算每種商品的銷售數量。",
+    "使用 JOIN 將會員資料和訂單資料連接。",
+    "使用 JOIN、SUM 和 GROUP BY 計算每種商品的銷售金額。"
+];
+
+async function startDatabase() {
+    try {
+        const SQL = await initSqlJs({
+            locateFile: file =>
+                "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/" + file
+        });
+
+        db = new SQL.Database();
+
+        db.run(`
+            CREATE TABLE Members (
+                MemberID INTEGER PRIMARY KEY,
+                Name TEXT,
+                Email TEXT
+            );
+
+            CREATE TABLE Products (
+                ProductID INTEGER PRIMARY KEY,
+                ProductName TEXT,
+                Category TEXT,
+                Price INTEGER
+            );
+
+            CREATE TABLE Orders (
+                OrderID INTEGER PRIMARY KEY,
+                MemberID INTEGER,
+                OrderDate TEXT,
+                FOREIGN KEY (MemberID) REFERENCES Members(MemberID)
+            );
+
+            CREATE TABLE OrderDetails (
+                DetailID INTEGER PRIMARY KEY,
+                OrderID INTEGER,
+                ProductID INTEGER,
+                Quantity INTEGER,
+                FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
+                FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+            );
+        `);
+
+        db.run(`
+            INSERT INTO Members VALUES
+            (1, '王小明', 'ming@example.com'),
+            (2, '陳小美', 'mei@example.com'),
+            (3, '林大華', 'hua@example.com');
+
+            INSERT INTO Products VALUES
+            (1, '經典白T', '上衣', 390),
+            (2, '牛仔長褲', '褲子', 890),
+            (3, '休閒外套', '外套', 1280),
+            (4, '針織上衣', '上衣', 750),
+            (5, '帆布包', '配件', 450);
+
+            INSERT INTO Orders VALUES
+            (101, 1, '2026-11-01'),
+            (102, 2, '2026-11-03'),
+            (103, 1, '2026-11-05'),
+            (104, 3, '2026-11-08');
+
+            INSERT INTO OrderDetails VALUES
+            (1, 101, 1, 2),
+            (2, 101, 2, 1),
+            (3, 102, 3, 1),
+            (4, 103, 4, 2),
+            (5, 103, 5, 1),
+            (6, 104, 2, 1);
+        `);
+
+        document.getElementById("queryMessage").innerHTML =
+            '<span class="message">資料庫載入成功，可以開始查詢！</span>';
+
+        document.getElementById("sqlInput").value = queries[0];
+        document.getElementById("beforeSQL").value = queries[0];
+
+        showSampleData();
+        runQuery();
+
+    } catch (error) {
+        document.getElementById("queryMessage").innerHTML =
+            '<span class="error">資料庫載入失敗，請確認網路連線後重新整理。</span>';
+    }
+}
+
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[character]);
+}
+
+function showTable(results, target) {
+    const area = document.getElementById(target);
+
+    if (!results || results.length === 0) {
+        area.innerHTML = "沒有查詢結果。";
+        return;
+    }
+
+    let html = "";
+
+    results.forEach(result => {
+        html += "<table><tr>";
+
+        result.columns.forEach(column => {
+            html += "<th>" + escapeHTML(column) + "</th>";
+        });
+
+        html += "</tr>";
+
+        result.values.forEach(row => {
+            html += "<tr>";
+            row.forEach(value => {
+                html += "<td>" + escapeHTML(value ?? "NULL") + "</td>";
+            });
+            html += "</tr>";
+        });
+
+        html += "</table>";
+        html += "<p>共 " + result.values.length + " 筆資料</p>";
+    });
+
+    area.innerHTML = html;
+}
+
+function showSampleData() {
+    const tables = ["Members", "Products", "Orders", "OrderDetails"];
+    let html = "";
+
+    tables.forEach(table => {
+        html += "<h4>" + table + "</h4>";
+        html += "<table><tr>";
+
+        const result = db.exec("SELECT * FROM " + table);
+
+        result[0].columns.forEach(column => {
+            html += "<th>" + escapeHTML(column) + "</th>";
+        });
+
+        html += "</tr>";
+
+        result[0].values.forEach(row => {
+            html += "<tr>";
+            row.forEach(value => {
+                html += "<td>" + escapeHTML(value) + "</td>";
+            });
+            html += "</tr>";
+        });
+
+        html += "</table>";
+    });
+
+    document.getElementById("sampleData").innerHTML = html;
+}
+
+function changeQuery() {
+    const index = Number(document.getElementById("question").value);
+
+    document.getElementById("sqlInput").value = queries[index];
+    document.getElementById("beforeSQL").value = queries[index];
+
+    document.getElementById("queryMessage").innerText =
+        "查詢目的：" + descriptions[index];
+
+    runQuery();
+}
+
+function runQuery() {
+    if (!db) return;
+
+    const sql = document.getElementById("sqlInput").value;
+
+    try {
+        const results = db.exec(sql);
+        showTable(results, "queryResult");
+
+        document.getElementById("queryMessage").innerHTML =
+            '<span class="message">SQL 執行成功！</span>';
+
+    } catch (error) {
+        document.getElementById("queryResult").innerHTML = "";
+
+        document.getElementById("queryMessage").innerHTML =
+            '<span class="error">SQL 錯誤：' +
+            escapeHTML(error.message) + '</span>';
+    }
+}
+
+function compareQuery() {
+    if (!db) return;
+
+    const before = document.getElementById("beforeSQL").value;
+    const after = document.getElementById("afterSQL").value;
+
+    try {
+        const beforeResult = db.exec(before);
+        const afterResult = db.exec(after);
+
+        showTable(beforeResult, "beforeResult");
+        showTable(afterResult, "afterResult");
+
+        const beforeCount = beforeResult.reduce(
+            (sum, result) => sum + result.values.length, 0
+        );
+
+        const afterCount = afterResult.reduce(
+            (sum, result) => sum + result.values.length, 0
+        );
+
+        let message = "";
+
+        if (beforeCount > afterCount) {
+            message = "修改後的查詢筆數減少了 " +
+                (beforeCount - afterCount) +
+                " 筆。可能是增加 WHERE 條件，讓查詢結果更精確。";
+        } else if (beforeCount < afterCount) {
+            message = "修改後的查詢筆數增加了 " +
+                (afterCount - beforeCount) +
+                " 筆。可能是放寬了查詢條件。";
+        } else {
+            message = "修改前後的資料筆數相同，請觀察欄位及資料內容是否有改變。";
+        }
+
+        document.getElementById("explanation").innerText = message;
+
+    } catch (error) {
+        document.getElementById("explanation").innerHTML =
+            '<span class="error">SQL 錯誤：' +
+            escapeHTML(error.message) + '</span>';
+    }
+}
+
+startDatabase();
+</script>
+
+</body>
+</html>
+
